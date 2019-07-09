@@ -71,35 +71,24 @@ def fitInvididualForecast(node_params):
         nodeToForecast = nodeToForecast.rename(columns = {nodeToForecast.columns[1] : 'y'})
         if capF is None:
             growth = 'linear'
-            m = Prophet(growth=growth,
-                        changepoints=changepoints1,
-                        n_changepoints=n_changepoints1,
-                        yearly_seasonality=yearly_seasonality,
-                        weekly_seasonality=weekly_seasonality,
-                        daily_seasonality=daily_seasonality,
-                        holidays=holidays,
-                        seasonality_prior_scale=seasonality_prior_scale,
-                        holidays_prior_scale=holidays_prior_scale,
-                        changepoint_prior_scale=changepoint_prior_scale,
-                        mcmc_samples=mcmc_samples,
-                        interval_width=interval_width,
-                        uncertainty_samples=uncertainty_samples)
         else:
             growth = 'logistic'
-            m = Prophet(growth=growth,
-                        changepoints=changepoints,
-                        n_changepoints=n_changepoints,
-                        yearly_seasonality=yearly_seasonality,
-                        weekly_seasonality=weekly_seasonality,
-                        daily_seasonality=daily_seasonality,
-                        holidays=holidays,
-                        seasonality_prior_scale=seasonality_prior_scale,
-                        holidays_prior_scale=holidays_prior_scale,
-                        changepoint_prior_scale=changepoint_prior_scale,
-                        mcmc_samples=mcmc_samples,
-                        interval_width=interval_width,
-                        uncertainty_samples=uncertainty_samples)
             nodeToForecast['cap'] = cap1
+
+        m = Prophet(growth=growth,
+                    changepoints=changepoints1,
+                    n_changepoints=n_changepoints1,
+                    yearly_seasonality=yearly_seasonality,
+                    weekly_seasonality=weekly_seasonality,
+                    daily_seasonality=daily_seasonality,
+                    holidays=holidays,
+                    seasonality_prior_scale=seasonality_prior_scale,
+                    holidays_prior_scale=holidays_prior_scale,
+                    changepoint_prior_scale=changepoint_prior_scale,
+                    mcmc_samples=mcmc_samples,
+                    interval_width=interval_width,
+                    uncertainty_samples=uncertainty_samples)
+
         m.fit(nodeToForecast)
         future = m.make_future_dataframe(periods = h, freq = freq, include_history = include_history)
         if capF is not None:
@@ -160,7 +149,6 @@ def fitForecast(y, h, sumMat, nodes, method, freq, include_history, cap, capF, c
                             "include_history": include_history}
             node_list.append(node_params)
 
-        print("Launching pool...")
         with multiprocessing.Pool() as pool:
             node_forecasts = pool.map(fitInvididualForecast, node_list)
 
