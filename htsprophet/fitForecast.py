@@ -22,8 +22,11 @@ import contextlib, os
 from scipy.special import inv_boxcox
 import multiprocessing
 
-def fitInvididualForecast(node_params):
-    node = node_params["node"]
+def fitInvididualForecast(node_data):
+
+    node = node_data["node"]
+    node_params = node_data["data_ns"].data
+
     y = node_params["y"]
     cap = node_params["cap"]
     capF = node_params["capF"]
@@ -125,29 +128,38 @@ def fitForecast(y, h, sumMat, nodes, method, freq, include_history, cap, capF, c
         
         if method == 'FP':
             nForecasts = sum(list(map(sum, nodes)))+1
+
+        data_args = {"y": y,
+                    "cap": cap,
+                    "capF": capF,
+                    "changepoints": changepoints,
+                    "n_changepoints": n_changepoints,
+                    "yearly_seasonality": yearly_seasonality,
+                    "weekly_seasonality": weekly_seasonality,
+                    "daily_seasonality": daily_seasonality,
+                    "holidays": holidays,
+                    "seasonality_prior_scale": seasonality_prior_scale,
+                    "holidays_prior_scale": holidays_prior_scale,
+                    "changepoint_prior_scale": changepoint_prior_scale,
+                    "mcmc_samples": mcmc_samples,
+                    "interval_width": interval_width,
+                    "uncertainty_samples": uncertainty_samples,
+                    "h": h,
+                    "freq": freq,
+                    "include_history": include_history}
+
+        from multiprocessing import Manager
+        mgr = Manager()
+        ns = mgr.Namespace()
+        ns.data = data_args
         
         node_list = []
         for node in range(nForecasts):
             node_params = {"node": node,
-                            "y": y,
-                            "cap": cap,
-                            "capF": capF,
-                            "changepoints": changepoints,
-                            "n_changepoints": n_changepoints,
-                            "yearly_seasonality": yearly_seasonality,
-                            "weekly_seasonality": weekly_seasonality,
-                            "daily_seasonality": daily_seasonality,
-                            "holidays": holidays,
-                            "seasonality_prior_scale": seasonality_prior_scale,
-                            "holidays_prior_scale": holidays_prior_scale,
-                            "changepoint_prior_scale": changepoint_prior_scale,
-                            "mcmc_samples": mcmc_samples,
-                            "interval_width": interval_width,
-                            "uncertainty_samples": uncertainty_samples,
-                            "h": h,
-                            "freq": freq,
-                            "include_history": include_history}
+                            "data_ns": ns}
             node_list.append(node_params)
+
+        print(f"Number of forecasts to fit: {len(node_list)}")
 
         with multiprocessing.Pool() as pool:
             node_forecasts = pool.map(fitInvididualForecast, node_list)
